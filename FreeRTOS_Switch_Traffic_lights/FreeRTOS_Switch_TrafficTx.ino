@@ -16,25 +16,26 @@
 #define LIGHT_4_YELLOW 12
 #define LIGHT_4_GREEN 13
 
-#define GREEN_1_SET_TIME 2000
-#define GREEN_2_SET_TIME 2000
-#define GREEN_3_SET_TIME 2000
-#define GREEN_4_SET_TIME 2000
-#define YELLOW_SET_TIME 1000
+#define GREEN_1_SET_TIME 10000
+#define GREEN_2_SET_TIME 10000
+#define GREEN_3_SET_TIME 10000
+#define GREEN_4_SET_TIME 10000
+#define YELLOW_SET_TIME 2000
 
 //switch
-#define SW5 A0
-#define SW6 A1
-#define SW7 A2
-#define SW8 A3
+#define SW1 A0
+#define SW2 A1
+#define SW3 A2
+#define SW4 A3
 //
-#define SW9 A4
+#define SW5 A4
 
 
+int status_SW1 = 0;
+int status_SW2 = 0;
+int status_SW3 = 0;
+int status_SW4 = 0;
 int status_SW5 = 0;
-int status_SW6 = 0;
-int status_SW7 = 0;
-int status_SW8 = 0;
 int state_LED = 0;
 
 // Define task handles
@@ -69,12 +70,12 @@ void setup() {
   pinMode(LIGHT_4_YELLOW, OUTPUT);
   pinMode(LIGHT_4_RED, OUTPUT);
 
-  pinMode(SW5,INPUT_PULLUP);
-  pinMode(SW6,INPUT_PULLUP);
-  pinMode(SW7,INPUT_PULLUP);
-  pinMode(SW8,INPUT_PULLUP);
+  pinMode(SW1,INPUT_PULLUP);
+  pinMode(SW2,INPUT_PULLUP);
+  pinMode(SW3,INPUT_PULLUP);
+  pinMode(SW4,INPUT_PULLUP);
 
-  pinMode(SW9,INPUT_PULLUP);
+  pinMode(SW5,INPUT_PULLUP);
 
   Serial.println("Tx");
 
@@ -135,7 +136,7 @@ void LightControlTask(void *pvParameters) {
         break;
       case 7:
         Traffic_YELLOW_4();
-        int TIME_GREEN_NEXT = GREEN_1_SET_TIME + GREEN_2_SET_TIME + GREEN_3_SET_TIME + GREEN_4_SET_TIME + (YELLOW_SET_TIME * 5);
+        unsigned int TIME_GREEN_NEXT = GREEN_1_SET_TIME + GREEN_2_SET_TIME + GREEN_3_SET_TIME + GREEN_4_SET_TIME + (YELLOW_SET_TIME * 5);
         Serial.println(String(TIME_GREEN_NEXT));
         break;
     }
@@ -150,63 +151,63 @@ void TaskSwitchInterrupt(void *pvParameters) {
   while(1) {
 
     //switch
-    if(digitalRead(SW5) == LOW)
+    if(digitalRead(SW1) == LOW)
     {
       Traffic_GREEN_1();
     }
-    else if(digitalRead(SW6) == LOW)
+    else if(digitalRead(SW2) == LOW)
     {
       Traffic_GREEN_2();
     }
-    else if(digitalRead(SW7) == LOW)
+    else if(digitalRead(SW3) == LOW)
     {
       Traffic_GREEN_3();
     }
-    else if(digitalRead(SW8) == LOW)
+    else if(digitalRead(SW4) == LOW)
     {
       Traffic_GREEN_4();
     }
     
-    if (digitalRead(SW5) == LOW || digitalRead(SW6) == LOW || digitalRead(SW7) == LOW || digitalRead(SW8) == LOW) {
+    if (digitalRead(SW1) == LOW || digitalRead(SW2) == LOW || digitalRead(SW3) == LOW || digitalRead(SW4) == LOW) {
       vTaskSuspend(TrafficControlTaskHandle);
       vTaskSuspend(LightControlTaskHandle);
-      if(digitalRead(SW5) == LOW){
-        status_SW5 = 1;
-      }else if(digitalRead(SW6) == LOW){
-        status_SW6 = 1;
-      }else if(digitalRead(SW7) == LOW){
-        status_SW7 = 1;
-      }else if(digitalRead(SW8) == LOW){
-        status_SW8 = 1;
+      if(digitalRead(SW1) == LOW){
+        status_SW1 = 1;
+      }else if(digitalRead(SW2) == LOW){
+        status_SW2 = 1;
+      }else if(digitalRead(SW3) == LOW){
+        status_SW3 = 1;
+      }else if(digitalRead(SW4) == LOW){
+        status_SW4 = 1;
       }
     } else {
-      if(status_SW5 == 1){
+      if(status_SW1 == 1){
         Traffic_YELLOW_1();
         delay(1000);
         vTaskResume(TrafficControlTaskHandle);
         vTaskResume(LightControlTaskHandle);
-        status_SW5 = 0;
+        status_SW1 = 0;
       }
-      else if(status_SW6 == 1){
+      else if(status_SW2 == 1){
         Traffic_YELLOW_2();
         delay(1000);
         vTaskResume(TrafficControlTaskHandle);
         vTaskResume(LightControlTaskHandle);
-        status_SW6 = 0;
+        status_SW2 = 0;
       }
-      else if(status_SW7 == 1){
+      else if(status_SW3 == 1){
         Traffic_YELLOW_3();
         delay(1000);
         vTaskResume(TrafficControlTaskHandle);
         vTaskResume(LightControlTaskHandle);
-        status_SW7 = 0;
+        status_SW3 = 0;
       }
-      else if(status_SW8 == 1){
+      else if(status_SW4 == 1){
         Traffic_YELLOW_4();
         delay(1000);
         vTaskResume(TrafficControlTaskHandle);
         vTaskResume(LightControlTaskHandle);
-        status_SW8 = 0;
+        status_SW4 = 0;
       }
     }
     vTaskDelay(pdMS_TO_TICKS(100));
@@ -217,7 +218,8 @@ void TaskSwitchInterrupt(void *pvParameters) {
 void TaskSwitchLEDControl(void *pvParameters) {
   (void)pvParameters;
   while (1){
-    if(digitalRead(SW9) == LOW ){
+    if(digitalRead(SW5) == LOW ){
+      status_SW5 = 1;
       vTaskSuspend(TrafficControlTaskHandle);
       vTaskSuspend(LightControlTaskHandle);
       vTaskSuspend(SwitchInterruptTaskHandle);
@@ -233,9 +235,13 @@ void TaskSwitchLEDControl(void *pvParameters) {
         state_LED = !state_LED;
       }
     } else {
-      vTaskResume(TrafficControlTaskHandle);
-      vTaskResume(LightControlTaskHandle);
-      vTaskResume(SwitchInterruptTaskHandle);
+      if(status_SW5 == 1){
+        vTaskResume(TrafficControlTaskHandle);
+        vTaskResume(LightControlTaskHandle);
+        vTaskResume(SwitchInterruptTaskHandle);
+        status_SW5 = 0;
+      }
+      
     }
     vTaskDelay(pdMS_TO_TICKS(100));
   }
