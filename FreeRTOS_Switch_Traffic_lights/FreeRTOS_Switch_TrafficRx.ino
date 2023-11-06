@@ -46,7 +46,7 @@ unsigned long GREEN_1_SET_TIME = 1000;
 unsigned long GREEN_2_SET_TIME = 1000;
 unsigned long GREEN_3_SET_TIME = 1000;
 unsigned long GREEN_4_SET_TIME = 1000;
-unsigned long YELLOW_SET_TIME = 1000;
+unsigned long YELLOW_SET_TIME = 2000;
 
 unsigned long Timer_1 = 0;
 
@@ -58,6 +58,7 @@ unsigned short Set_Time[8] = {GREEN_1_SET_TIME, YELLOW_SET_TIME,
 short Light_Index = GREEN_LIGHT_1;
 
 String receivedData;
+unsigned int uintReceivedData;
 
 //function
 void Traffic_GREEN_1();
@@ -113,13 +114,15 @@ void TaskTrafficController(void *pvParameters) {
 
   while (1) {
     if ((millis() - Timer_1) >= Set_Time[Light_Index]) {
-      Serial.println(Light_Index);
-      Serial.println(Set_Time[Light_Index]);
+      
+      
       Light_Index++;
 
       if (Light_Index > 7) {
         Light_Index = GREEN_LIGHT_1;
       }
+      
+      
 
       Timer_1 = millis();
 
@@ -149,6 +152,8 @@ void TaskTrafficController(void *pvParameters) {
           Traffic_YELLOW_4();
           break;
       }
+      Serial.println(Light_Index);
+      Serial.println(Set_Time[Light_Index]);
     }
 
     vTaskDelay(pdMS_TO_TICKS(100)); // Delay for 100ms
@@ -161,7 +166,8 @@ void TaskSerialCommunication(void *pvParameters) {
   while (1) {
     if (Serial.available() > 0) {
       receivedData = Serial.readStringUntil('\n');
-      int Time_Divider = Calculate_Time(receivedData.toInt(), Light_Index);
+      uintReceivedData = receivedData.toInt();
+      unsigned int Time_Divider = Calculate_Time(uintReceivedData, Light_Index);
 
       Set_Time[0] = Set_Time[2] = Set_Time[4] = Set_Time[6] = Time_Divider;
     }
@@ -239,58 +245,52 @@ void TaskSwitchInterrupt(void *pvParameters) {
   }
 }
 
-int Calculate_Time(int time, short index){
-  int max = 5000;
+int Calculate_Time(unsigned int time, short index){
+  int max = 20000;
   int min = 1000;
   int round = 0;
-  int time_distance = 0;
+  int time_distance = 10000;
   int yellow_time = 0;
-  //Serial.println(time);
-  //Serial.println(index);
+  /*index+=1;
+  if(index > 7) {
+    index = 0;
+  }*/
+
   switch(index){
     case 0:
       round = 4;
       break;
     case 1:
-       yellow_time+=1000;
+       yellow_time+=4000;
       round = 3;
       break;
     case 2:
       round = 3;
       break;
     case 3:
-       yellow_time+=1000;
+       yellow_time+=4000;
       round = 2;
       break;
     case 4:
       round = 2;
       break;
     case 5:
-       yellow_time+=1000;
+      yellow_time+=4000;
       round = 1;
       break;
     case 6:
       round = 5;
       break;
     case 7:
-      yellow_time+=1000;
+      yellow_time+=4000;
       round = 4;
       break;
   }
 
-  yellow_time = yellow_time + (round * 1000);
+  yellow_time = yellow_time + (round * 2000);
 
   while(true){
-    /*if(((time - yellow_time)/round) + time_distance > max){
-      round+=4;
-      yellow_time+=3000;
-    }else{
-      int new_time = (time - yellow_time)/round + time_distance;
-      Serial.println(new_time);
-      return new_time;
-    }*/
-    int new_time = (time - yellow_time)/round + time_distance;
-    //Serial.println(new_time);
+    unsigned int new_time = ((time - yellow_time)/round) + (time_distance/round);
     return new_time;
   }
 }
@@ -438,5 +438,3 @@ void Traffic_YELLOW_4(){
   digitalWrite(LIGHT_4_YELLOW, HIGH);
   digitalWrite(LIGHT_4_RED, LOW);
 }
-
-// Rest of the code remains the same
