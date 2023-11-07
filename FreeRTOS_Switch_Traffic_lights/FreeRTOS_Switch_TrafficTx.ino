@@ -38,6 +38,10 @@ int status_SW4 = 0;
 int status_SW5 = 0;
 int state_LED = 0;
 
+int event = 0;
+String receivedData;
+int intReceivedData;
+
 // Define task handles
 TaskHandle_t TrafficControlTaskHandle;
 TaskHandle_t LightControlTaskHandle;
@@ -136,8 +140,21 @@ void LightControlTask(void *pvParameters) {
         break;
       case 7:
         Traffic_YELLOW_4();
-        unsigned int TIME_GREEN_NEXT = GREEN_1_SET_TIME + GREEN_2_SET_TIME + GREEN_3_SET_TIME + GREEN_4_SET_TIME + (YELLOW_SET_TIME * 5);
-        Serial.println(String(TIME_GREEN_NEXT));
+        if (Serial.available() > 0) {
+          receivedData = Serial.readStringUntil('\n');
+          intReceivedData = receivedData.toInt();
+          
+        }
+
+        if(intReceivedData == 0 || event == 0){
+            unsigned int TIME_GREEN_NEXT = GREEN_1_SET_TIME + GREEN_2_SET_TIME + GREEN_3_SET_TIME + GREEN_4_SET_TIME + (YELLOW_SET_TIME * 5);
+            Serial.println(String(TIME_GREEN_NEXT));
+            intReceivedData = 1;
+            event = 1;
+          }else{
+          
+          }
+        
         break;
     }
     //ต้องใส่ vTaskDelay ใน function นี้ไม่งั้น task ไม่ทำงาน
