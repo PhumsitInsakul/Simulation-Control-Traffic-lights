@@ -42,6 +42,9 @@ int status_SW2 = 0;
 int status_SW3 = 0;
 int status_SW4 = 0;
 
+int event = 0;
+
+
 unsigned long GREEN_1_SET_TIME = 1000;
 unsigned long GREEN_2_SET_TIME = 1000;
 unsigned long GREEN_3_SET_TIME = 1000;
@@ -50,7 +53,7 @@ unsigned long YELLOW_SET_TIME = 2000;
 
 unsigned long Timer_1 = 0;
 
-unsigned short Set_Time[8] = {GREEN_1_SET_TIME, YELLOW_SET_TIME,
+unsigned int Set_Time[8] = {GREEN_1_SET_TIME, YELLOW_SET_TIME,
                               GREEN_2_SET_TIME, YELLOW_SET_TIME, 
                               GREEN_3_SET_TIME, YELLOW_SET_TIME,
                               GREEN_4_SET_TIME, YELLOW_SET_TIME};
@@ -115,20 +118,19 @@ void TaskTrafficController(void *pvParameters) {
   while (1) {
     if ((millis() - Timer_1) >= Set_Time[Light_Index]) {
       
-      
       Light_Index++;
 
       if (Light_Index > 7) {
         Light_Index = GREEN_LIGHT_1;
       }
       
-      
-
       Timer_1 = millis();
 
       switch (Light_Index) {
         case GREEN_LIGHT_1:
           Traffic_GREEN_1();
+          event = 0;
+          Serial.println(String(event));
           break;
         case YELLOW_LIGHT_1:
           Traffic_YELLOW_1();
@@ -152,8 +154,6 @@ void TaskTrafficController(void *pvParameters) {
           Traffic_YELLOW_4();
           break;
       }
-      Serial.println(Light_Index);
-      Serial.println(Set_Time[Light_Index]);
     }
 
     vTaskDelay(pdMS_TO_TICKS(100)); // Delay for 100ms
@@ -168,7 +168,7 @@ void TaskSerialCommunication(void *pvParameters) {
       receivedData = Serial.readStringUntil('\n');
       uintReceivedData = receivedData.toInt();
       unsigned int Time_Divider = Calculate_Time(uintReceivedData, Light_Index);
-
+       
       Set_Time[0] = Set_Time[2] = Set_Time[4] = Set_Time[6] = Time_Divider;
     }
 
@@ -246,43 +246,40 @@ void TaskSwitchInterrupt(void *pvParameters) {
 }
 
 int Calculate_Time(unsigned int time, short index){
+  Serial.println(index);
   int max = 20000;
   int min = 1000;
   int round = 0;
   int time_distance = 10000;
   int yellow_time = 0;
-  /*index+=1;
-  if(index > 7) {
-    index = 0;
-  }*/
 
   switch(index){
     case 0:
       round = 4;
       break;
     case 1:
-       yellow_time+=4000;
+      yellow_time+=2000;
       round = 3;
       break;
     case 2:
       round = 3;
       break;
     case 3:
-       yellow_time+=4000;
+      yellow_time+=2000;
       round = 2;
       break;
     case 4:
       round = 2;
       break;
     case 5:
-      yellow_time+=4000;
+      yellow_time+=2000;
       round = 1;
       break;
     case 6:
       round = 5;
       break;
     case 7:
-      yellow_time+=4000;
+      yellow_time+=2000;
       round = 4;
       break;
   }
