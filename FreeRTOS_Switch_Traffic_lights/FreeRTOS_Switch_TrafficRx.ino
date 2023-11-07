@@ -31,16 +31,21 @@
 TaskHandle_t xTaskHandleTrafficController;
 TaskHandle_t xTaskHandleSerialCommunication;
 TaskHandle_t xTaskHandleSwitchInterrupt;
+TaskHandle_t SwitchLEDControlTaskHandle;
 
 //switch
 #define SW1 A0
 #define SW2 A1
 #define SW3 A2
 #define SW4 A3
+#define SW5 A4
+
 int status_SW1 = 0;
 int status_SW2 = 0;
 int status_SW3 = 0;
 int status_SW4 = 0;
+int status_SW5 = 0;
+int state_LED = 0;
 
 int event = 0;
 
@@ -98,12 +103,15 @@ void setup() {
   pinMode(SW3,INPUT_PULLUP);
   pinMode(SW4,INPUT_PULLUP);
 
+  pinMode(SW5,INPUT_PULLUP);
+
   Serial.println("Rx");
 
   //Create Task
   xTaskCreate(TaskTrafficController, "TrafficController", 128, NULL, 2, &xTaskHandleTrafficController);
   xTaskCreate(TaskSerialCommunication, "SerialCommunication", 128, NULL, 1, &xTaskHandleSerialCommunication);
   xTaskCreate(TaskSwitchInterrupt, "SwitchInterrupt", 128, NULL, 3, &xTaskHandleSwitchInterrupt);
+  xTaskCreate(TaskSwitchLEDControl, "SwitchLEDControl", 128, NULL, 3, &SwitchLEDControlTaskHandle);
 }
 
 void loop() {
@@ -240,6 +248,38 @@ void TaskSwitchInterrupt(void *pvParameters) {
         vTaskResume(xTaskHandleSerialCommunication);
         status_SW4 = 0;
       }
+    }
+    vTaskDelay(pdMS_TO_TICKS(100));
+  }
+}
+
+void TaskSwitchLEDControl(void *pvParameters) {
+  (void)pvParameters;
+  while (1){
+    if(digitalRead(SW5) == LOW ){
+      status_SW5 = 1;
+      vTaskSuspend(TrafficControlTaskHandle);
+      vTaskSuspend(LightControlTaskHandle);
+      vTaskSuspend(SwitchInterruptTaskHandle);
+    
+      if((millis() - Timer_2) >= 1000) {
+        Timer_2 = millis();
+
+        if(state_LED == 0 ){
+          Traffic_YELLOW_ALL();
+        } else {
+          Traffic_LOW();
+        }
+        state_LED = !state_LED;
+      }
+    } else {
+      if(status_SW5 == 1){
+        vTaskResume(TrafficControlTaskHandle);
+        vTaskResume(LightControlTaskHandle);
+        vTaskResume(SwitchInterruptTaskHandle);
+        status_SW5 = 0;
+      }
+      
     }
     vTaskDelay(pdMS_TO_TICKS(100));
   }
