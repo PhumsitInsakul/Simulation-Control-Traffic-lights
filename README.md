@@ -3,6 +3,7 @@
 
 ## RTOS (Real-Time Operating System)
 - Hard Real-Time Operating System (Hard RTOS): Hard RTOS เป็นระบบปฏิบัติการแบบเรียลไทม์ที่มีความสำคัญที่สุดในการรับรู้และตอบสนองต่อเหตุการณ์แบบเรียลไทม์อย่างเคร่งครัด
+- Firm Real-Time Operating System (Firm RTOS): Firm RTOS มีความสำคัญในการตอบสนองต่อเหตุการณ์แบบเรียลไทม์ แต่ยอมรับการละเมิดเวลาเรียลไทม์ในบางกรณี
 - Soft Real-Time Operating System (Soft RTOS): Soft RTOS มีความสำคัญในการรับรู้และตอบสนองต่อเหตุการณ์แบบเรียลไทม์ แต่ยอมรับการละเมิดเวลา
   
 ## Simulation Detail
